@@ -163,6 +163,9 @@ def create_carousel_post(image_urls: list[str], text: str) -> str | None:
     if not item_ids:
         return None
 
+    print("  画像コンテナの処理を待機中（15秒）...")
+    time.sleep(15)
+
     params = {
         "media_type": "CAROUSEL",
         "children": ",".join(item_ids),
