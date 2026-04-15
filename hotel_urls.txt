@@ -1,0 +1,17 @@
+# 追加したいホテルのURLを1行ずつ記入してください
+# # から始まる行はコメントとして無視されます
+
+https://travel.rakuten.co.jp/HOTEL/25128/
+https://travel.rakuten.co.jp/HOTEL/13808/
+https://travel.rakuten.co.jp/HOTEL/14072/
+https://travel.rakuten.co.jp/HOTEL/19672/
+https://travel.rakuten.co.jp/HOTEL/5547/
+https://travel.rakuten.co.jp/HOTEL/168769/
+https://travel.rakuten.co.jp/HOTEL/172611/
+https://travel.rakuten.co.jp/HOTEL/168681/
+https://travel.rakuten.co.jp/HOTEL/7824/
+https://travel.rakuten.co.jp/HOTEL/30766/
+https://travel.rakuten.co.jp/HOTEL/5417/
+https://travel.rakuten.co.jp/HOTEL/5305/
+https://travel.rakuten.co.jp/HOTEL/18243/
+https://travel.rakuten.co.jp/HOTEL/8643/

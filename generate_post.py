@@ -1,0 +1,173 @@
+"""
+ホテル情報から投稿文（本文 + ツリー返信）を生成するモジュール
+"""
+
+import sys
+import random
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+
+MAIN_TEMPLATES = [
+    """{hook}
+
+・{feature1}
+・{feature2}
+・{feature3}
+
+{access_line}マジでここ知らないと損。
+
+宿の名前は、""",
+
+    """{hook}
+
+{feature1}で、{feature2}もある。
+{feature3}まで揃ってるって普通じゃない。
+
+{access_line}気になった人はぜひ。
+
+この宿の名前は、""",
+
+    """ちょっと待って。{area}にこんな宿あったの。
+
+{feature1}
+{feature2}
+{feature3}
+
+{access_line}友達に教えたくない宿No.1。
+
+宿の名前は、""",
+
+    """{hook}
+
+{area}行くならここ一択だと思ってる。
+
+・{feature1}
+・{feature2}
+・{feature3}
+
+{access_line}泊まったら分かる。
+
+この宿の名前は、""",
+
+    """正直これ広めたくなかったんだけど。
+
+{feature1}があって、{feature2}もある{area}の宿。
+{feature3}まで体験できる。
+
+{access_line}
+宿の名前は、""",
+]
+
+HOOK_TEMPLATES = [
+    "{area}、こんな宿があるって知ってた？",
+    "{area}に来るたびにここ選んでる理由を話す",
+    "この宿に泊まってから{area}の旅の基準が変わった",
+    "{area}で泊まって正直いちばん良かった宿の話",
+    "友達に{area}の宿聞かれたらここしか言えない",
+]
+
+REPLY_TEMPLATES = [
+    """『{name}』です！
+
+気になった人はここから見てみて↓
+{affiliate_url}
+
+※PR""",
+
+    """答え合わせ『{name}』
+
+評価{review}点。泊まった人みんな満足してるやつ。
+詳しくはこっちから↓
+{affiliate_url}
+
+※PR""",
+
+    """『{name}』/{area}
+
+空き状況とかプランはここで見てね
+{affiliate_url}
+
+※PR""",
+]
+
+
+FALLBACK_FEATURES = [
+    "スタッフの対応が神レベル",
+    "リピーター続出の人気宿",
+    "料理が想像の上を行く",
+    "眺めが最高すぎる",
+    "温泉の質がとにかくいい",
+    "コスパが他と比べ物にならない",
+    "部屋の居心地が抜群",
+    "何度でもリピートしたくなる",
+]
+
+
+def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "") -> dict:
+    """
+    ホテル情報から投稿本文とツリー返信文を生成する。
+    返り値: {"main_text": str, "reply_text": str}
+    """
+    features = [f.strip() for f in sell_point.split("・") if f.strip()]
+
+    fallbacks = random.sample(FALLBACK_FEATURES, len(FALLBACK_FEATURES))
+    fi = 0
+    while len(features) < 3:
+        features.append(fallbacks[fi % len(fallbacks)])
+        fi += 1
+
+    hook = random.choice(HOOK_TEMPLATES).format(area=area)
+    template = random.choice(MAIN_TEMPLATES)
+
+    access = hotel_info.get("access", "")[:30].strip()
+    access_line = f"{access}。\n" if access else ""
+
+    main_text = template.format(
+        hook=hook,
+        area=area,
+        feature1=features[0],
+        feature2=features[1],
+        feature3=features[2],
+        access_line=access_line,
+    )
+
+    # 200文字に収まるよう調整
+    if len(main_text) > 210:
+        main_text = main_text[:207] + "…"
+
+    review = hotel_info.get("review_average", "")
+    reply_template = random.choice(REPLY_TEMPLATES)
+    reply_text = reply_template.format(
+        name=hotel_info.get("name", ""),
+        area=area,
+        review=review,
+        affiliate_url=hotel_info.get("affiliate_url", ""),
+    )
+
+    return {
+        "main_text": main_text.strip(),
+        "reply_text": reply_text.strip(),
+    }
+
+
+if __name__ == "__main__":
+    sample_info = {
+        "name": "大磯プリンスホテル",
+        "access": "JR大磯駅から徒歩圏、新宿から電車1時間10分",
+        "review_average": 4.55,
+        "affiliate_url": "https://travel.rakuten.co.jp/HOTEL/28921/",
+    }
+
+    result = generate_post(
+        hotel_info=sample_info,
+        sell_point="インフィニティプール・パノラマサウナ・大磯温泉露天風呂・新宿から1時間",
+        area="神奈川",
+        price="2万円台",
+    )
+
+    print("=== 本投稿 ===")
+    print(result["main_text"])
+    print(f"\n文字数: {len(result['main_text'])}")
+    print("\n=== ツリー返信 ===")
+    print(result["reply_text"])
