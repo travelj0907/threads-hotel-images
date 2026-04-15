@@ -3,9 +3,23 @@
 """
 
 import sys
+import os
 import random
+from urllib.parse import quote
+from dotenv import load_dotenv
 
+load_dotenv()
 sys.stdout.reconfigure(encoding="utf-8")
+
+RAKUTEN_AFFILIATE_ID = os.getenv("RAKUTEN_AFFILIATE_ID", "")
+
+
+def to_affiliate_url(hotel_url: str) -> str:
+    """楽天トラベルのURLをアフィリエイトリンクに変換する"""
+    if not RAKUTEN_AFFILIATE_ID or not hotel_url:
+        return hotel_url
+    encoded = quote(hotel_url, safe="")
+    return f"https://hb.afl.rakuten.co.jp/hgc/{RAKUTEN_AFFILIATE_ID}/?pc={encoded}"
 
 
 MAIN_TEMPLATES = [
@@ -137,12 +151,15 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "")
         main_text = main_text[:207] + "…"
 
     review = hotel_info.get("review_average", "")
+    raw_url = hotel_info.get("affiliate_url", "")
+    affiliate_url = to_affiliate_url(raw_url)
+
     reply_template = random.choice(REPLY_TEMPLATES)
     reply_text = reply_template.format(
         name=hotel_info.get("name", ""),
         area=area,
         review=review,
-        affiliate_url=hotel_info.get("affiliate_url", ""),
+        affiliate_url=affiliate_url,
     )
 
     return {
