@@ -35,18 +35,19 @@ MAIN_TEMPLATES = [
 
     """{hook}
 
-{feature1}で、{feature2}もある。
-{feature3}まで揃ってるって普通じゃない。
+・{feature1}
+・{feature2}
+・{feature3}
 
-{access_line}気になった人はぜひ。
+全部揃ってるって普通じゃない。
 
-この宿の名前は、""",
+{access_line}この宿の名前は、""",
 
     """ちょっと待って。{area}にこんな宿あったの。
 
-{feature1}
-{feature2}
-{feature3}
+・{feature1}
+・{feature2}
+・{feature3}
 
 {access_line}友達に教えたくない宿No.1。
 
@@ -66,10 +67,12 @@ MAIN_TEMPLATES = [
 
     """正直これ広めたくなかったんだけど。
 
-{feature1}があって、{feature2}もある{area}の宿。
-{feature3}まで体験できる。
+・{feature1}
+・{feature2}
+・{feature3}
 
-{access_line}
+{access_line}全部体験できる{area}の宿。
+
 宿の名前は、""",
 ]
 
