@@ -109,6 +109,23 @@ REPLY_TEMPLATES = [
 ]
 
 
+def _format_price(price: str) -> str:
+    """
+    価格帯が2万円以下のときだけ「〇万円以下」形式で返す。
+    「3万円台〜」以上や「要確認」は空文字を返す。
+    """
+    if not price:
+        return ""
+    import re
+    m = re.search(r"(\d+)", price)
+    if not m:
+        return ""
+    man = int(m.group(1))
+    if man <= 2:
+        return f"{man}万円以下"
+    return ""
+
+
 def _trim_access(access: str, max_len: int = 25) -> str:
     """
     アクセス文を自然な区切りで短く整形する。
@@ -181,10 +198,8 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "")
     access_raw = hotel_info.get("access", "").strip()
     access = "" if access_in_features else _trim_access(access_raw)
 
-    # 価格帯（「要確認」以外のときだけ表示）
-    price_clean = price.strip() if price else ""
-    if price_clean in ("要確認", ""):
-        price_clean = ""
+    # 価格帯：2万円以下のときだけ「〜以下」形式で表示
+    price_clean = _format_price(price)
 
     # access_line：価格とアクセスを自然につなぐ
     if price_clean and access:
