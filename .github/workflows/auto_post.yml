@@ -2,10 +2,10 @@ name: Threads 自動投稿
 
 on:
   schedule:
-    - cron: '0 23 * * *'   # JST 8:00  (UTC 23:00 前日)
-    - cron: '0 3 * * *'    # JST 12:00 (UTC 3:00)
-    - cron: '0 9 * * *'    # JST 18:00 (UTC 9:00)
-    - cron: '0 11 * * *'   # JST 20:00 (UTC 11:00)
+    - cron: '30 23 * * *'  # JST 8:30  (UTC 23:30 前日)
+    - cron: '30 2 * * *'   # JST 11:30 (UTC 2:30)
+    - cron: '30 8 * * *'   # JST 17:30 (UTC 8:30)
+    - cron: '30 10 * * *'  # JST 19:30 (UTC 10:30)
   workflow_dispatch:         # 手動実行ボタン（テスト用）
 
 jobs:
@@ -27,7 +27,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Threadsへ自動投稿
-        run: python main.py --auto
+        run: |
+          echo "実行日時: $(date '+%Y-%m-%d %H:%M:%S UTC') (JST: $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S'))"
+          python main.py --auto
         env:
           THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}

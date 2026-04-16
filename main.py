@@ -176,6 +176,7 @@ def main(auto_mode: bool = False):
         print(f"\n投稿済みフラグを更新しました: {hotel_name}（通算{total_posted}投稿目）")
     else:
         print("\n投稿に失敗しました。ログを確認してください。")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
