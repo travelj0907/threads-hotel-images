@@ -133,6 +133,11 @@ def main(auto_mode: bool = False):
         "affiliate_url": affiliate_url,
     }
 
+    # 通算投稿数が偶数のときだけアフィリエイトリンクを入れる（A/Bテスト）
+    total_so_far = count_total_posted(hotels)
+    include_affiliate = (total_so_far % 2 == 0)
+    print(f"アフィリエイトリンク: {'あり' if include_affiliate else 'なし'} (通算{total_so_far}投稿目)")
+
     # 投稿文生成
     print("投稿文を生成中...")
     post_texts = generate_post(
@@ -140,6 +145,7 @@ def main(auto_mode: bool = False):
         sell_point=sell_point,
         area=area,
         price=price,
+        include_affiliate=include_affiliate,
     )
 
     print("\n=== 生成された投稿文 ===")

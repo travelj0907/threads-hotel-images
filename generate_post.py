@@ -99,6 +99,22 @@ REPLY_TEMPLATES = [
 ※PR""",
 ]
 
+# アフィリエイトリンクなし版（A/Bテスト用）
+REPLY_TEMPLATES_NO_LINK = [
+    """『{name}』です！
+
+気になった人は「{name}」で検索してみて。""",
+
+    """答え合わせ『{name}』
+
+評価{review}点。泊まった人みんな満足してるやつ。
+「{name}」で調べてみて。""",
+
+    """『{name}』/{area}
+
+気になる人は「{name}」で調べてみてね。""",
+]
+
 
 def _format_price(price: str) -> str:
     """
@@ -165,7 +181,7 @@ FALLBACK_FEATURES = [
 ]
 
 
-def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "") -> dict:
+def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "", include_affiliate: bool = True) -> dict:
     """
     ホテル情報から投稿本文とツリー返信文を生成する。
     返り値: {"main_text": str, "reply_text": str}
@@ -218,16 +234,24 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "")
         main_text = _trim_at_boundary(main_text, 207)
 
     review = hotel_info.get("review_average", "")
-    raw_url = hotel_info.get("affiliate_url", "")
-    affiliate_url = to_affiliate_url(raw_url)
 
-    reply_template = random.choice(REPLY_TEMPLATES)
-    reply_text = reply_template.format(
-        name=hotel_info.get("name", ""),
-        area=area,
-        review=review,
-        affiliate_url=affiliate_url,
-    )
+    if include_affiliate:
+        raw_url = hotel_info.get("affiliate_url", "")
+        affiliate_url = to_affiliate_url(raw_url)
+        reply_template = random.choice(REPLY_TEMPLATES)
+        reply_text = reply_template.format(
+            name=hotel_info.get("name", ""),
+            area=area,
+            review=review,
+            affiliate_url=affiliate_url,
+        )
+    else:
+        reply_template = random.choice(REPLY_TEMPLATES_NO_LINK)
+        reply_text = reply_template.format(
+            name=hotel_info.get("name", ""),
+            area=area,
+            review=review,
+        )
 
     return {
         "main_text": main_text.strip(),
