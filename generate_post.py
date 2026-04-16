@@ -25,9 +25,8 @@ def to_affiliate_url(hotel_url: str) -> str:
 MAIN_TEMPLATES = [
     """{hook}
 
-・{feature1}
-・{feature2}
-・{feature3}
+{feature1}、{feature2}。
+{feature3}。
 
 {access_line}マジでここ知らないと損。
 
@@ -35,19 +34,15 @@ MAIN_TEMPLATES = [
 
     """{hook}
 
-・{feature1}
-・{feature2}
-・{feature3}
-
-全部揃ってるって普通じゃない。
+{feature1}。
+{feature2}、{feature3}まで揃ってる。
 
 {access_line}この宿の名前は、""",
 
     """ちょっと待って。{area}にこんな宿あったの。
 
-・{feature1}
-・{feature2}
-・{feature3}
+{feature1}。
+{feature2}、{feature3}。
 
 {access_line}友達に教えたくない宿No.1。
 
@@ -57,9 +52,8 @@ MAIN_TEMPLATES = [
 
 {area}行くならここ一択だと思ってる。
 
-・{feature1}
-・{feature2}
-・{feature3}
+{feature1}に{feature2}、
+{feature3}まである。
 
 {access_line}泊まったら分かる。
 
@@ -67,13 +61,10 @@ MAIN_TEMPLATES = [
 
     """正直これ広めたくなかったんだけど。
 
-・{feature1}
-・{feature2}
-・{feature3}
+{feature1}、{feature2}。
+{feature3}まで体験できる。
 
-{access_line}全部体験できる{area}の宿。
-
-宿の名前は、""",
+{access_line}宿の名前は、""",
 ]
 
 HOOK_TEMPLATES = [
@@ -201,13 +192,15 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "")
     # 価格帯：2万円以下のときだけ「〜以下」形式で表示
     price_clean = _format_price(price)
 
-    # access_line：価格とアクセスを自然につなぐ
-    if price_clean and access:
-        access_line = f"{price_clean} / {access}。\n"
-    elif price_clean:
-        access_line = f"{price_clean}。\n"
-    elif access:
-        access_line = f"{access}。\n"
+    # access_line：価格を文章化してアクセスと組み合わせる
+    price_sentence = f"{price_clean}で泊まれる。" if price_clean else ""
+    access_sentence = f"{access}。" if access else ""
+    if price_sentence and access_sentence:
+        access_line = f"{price_sentence}{access_sentence}\n"
+    elif price_sentence:
+        access_line = f"{price_sentence}\n"
+    elif access_sentence:
+        access_line = f"{access_sentence}\n"
     else:
         access_line = ""
 
