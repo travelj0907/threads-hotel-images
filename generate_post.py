@@ -173,9 +173,28 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "")
     hook = random.choice(HOOK_TEMPLATES).format(area=area)
     template = random.choice(MAIN_TEMPLATES)
 
+    # アクセス系キーワードがsell_pointに含まれていたらaccess_lineは重複するので省略
+    ACCESS_KEYWORDS = ["駅", "徒歩", "空港", "バス", "送迎", "圏内"]
+    access_in_features = any(
+        kw in f for f in features for kw in ACCESS_KEYWORDS
+    )
     access_raw = hotel_info.get("access", "").strip()
-    access = _trim_access(access_raw)
-    access_line = f"{access}。\n" if access else ""
+    access = "" if access_in_features else _trim_access(access_raw)
+
+    # 価格帯（「要確認」以外のときだけ表示）
+    price_clean = price.strip() if price else ""
+    if price_clean in ("要確認", ""):
+        price_clean = ""
+
+    # access_line：価格とアクセスを自然につなぐ
+    if price_clean and access:
+        access_line = f"{price_clean} / {access}。\n"
+    elif price_clean:
+        access_line = f"{price_clean}。\n"
+    elif access:
+        access_line = f"{access}。\n"
+    else:
+        access_line = ""
 
     main_text = template.format(
         hook=hook,
