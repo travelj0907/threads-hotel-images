@@ -106,6 +106,42 @@ REPLY_TEMPLATES = [
 ]
 
 
+def _trim_access(access: str, max_len: int = 25) -> str:
+    """
+    アクセス文を自然な区切りで短く整形する。
+    複数の交通手段が並んでいる場合は最初の1つだけ使う。
+    """
+    if not access:
+        return ""
+    # 複数の区切りパターンで最初の部分だけ取る
+    for sep in ["・", "　　", "／", "/", "、"]:
+        if sep in access:
+            access = access.split(sep)[0].strip()
+            break
+    # それでも長い場合は句点か読点で切る
+    if len(access) > max_len:
+        for ch in ["。", "、"]:
+            idx = access.rfind(ch, 0, max_len)
+            if idx > 0:
+                return access[:idx]
+        access = access[:max_len]
+    return access.rstrip("。、・")
+
+
+def _trim_at_boundary(text: str, max_len: int) -> str:
+    """
+    文の途中で切らずに max_len 以内に収める。
+    改行・句点・読点を優先して切断位置を探す。
+    """
+    if len(text) <= max_len:
+        return text
+    for ch in ["\n", "。", "、"]:
+        idx = text.rfind(ch, 0, max_len)
+        if idx > max_len // 2:
+            return text[:idx + 1].rstrip()
+    return text[:max_len] + "…"
+
+
 FALLBACK_FEATURES = [
     "スタッフの対応が神レベル",
     "リピーター続出の人気宿",
@@ -134,7 +170,8 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "")
     hook = random.choice(HOOK_TEMPLATES).format(area=area)
     template = random.choice(MAIN_TEMPLATES)
 
-    access = hotel_info.get("access", "")[:30].strip()
+    access_raw = hotel_info.get("access", "").strip()
+    access = _trim_access(access_raw)
     access_line = f"{access}。\n" if access else ""
 
     main_text = template.format(
@@ -146,9 +183,9 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "")
         access_line=access_line,
     )
 
-    # 200文字に収まるよう調整
+    # 200文字に収まるよう調整（文の途中で切らない）
     if len(main_text) > 210:
-        main_text = main_text[:207] + "…"
+        main_text = _trim_at_boundary(main_text, 207)
 
     review = hotel_info.get("review_average", "")
     raw_url = hotel_info.get("affiliate_url", "")
