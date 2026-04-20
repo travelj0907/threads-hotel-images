@@ -16,15 +16,20 @@ jobs:
 
     steps:
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Python セットアップ
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
       - name: ライブラリインストール
         run: pip install -r requirements.txt
+
+      - name: 投稿可能か確認（FALSEかつimages/に画像がある件数）
+        run: python main.py --check
+        env:
+          PYTHONUTF8: 1
 
       - name: Threadsへ自動投稿
         run: |
