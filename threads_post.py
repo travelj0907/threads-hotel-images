@@ -4,6 +4,7 @@ Threads APIへの投稿処理モジュール
 """
 
 import os
+import random
 import time
 import base64
 import requests
@@ -24,6 +25,21 @@ IS_GITHUB_ACTIONS = os.environ.get("GITHUB_ACTIONS") == "true"
 THREADS_BASE_URL = f"https://graph.threads.net/v1.0/{THREADS_USER_ID}"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/contents"
 REPO_ROOT = Path(__file__).parent
+
+_SUPPORTED_IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png")
+
+
+def random_image_paths(image_folder: Path, max_count: int = 5) -> list[Path]:
+    """フォルダ内の画像を最大 max_count 枚ランダムに選び、ランダムな順で返す。"""
+    candidates = [
+        p
+        for p in image_folder.iterdir()
+        if p.suffix.lower() in _SUPPORTED_IMAGE_SUFFIXES
+    ]
+    if not candidates:
+        return []
+    k = min(max_count, len(candidates))
+    return random.sample(candidates, k)
 
 
 # ── GitHub へ画像アップロード ──────────────────────────────
@@ -58,16 +74,10 @@ def upload_image_to_github(image_path: Path) -> str | None:
         return None
 
 
-def get_github_raw_urls(image_folder: Path) -> list[str]:
+def github_raw_urls_for_paths(images: list[Path]) -> list[str]:
     """
-    GitHub Actions実行時：リポジトリ内の画像のRAW URLを直接生成する（アップロード不要）。
+    GitHub Actions実行時：リポジトリ内の画像パスから RAW URL を生成する（アップロード不要）。
     """
-    supported = [".jpg", ".jpeg", ".png"]
-    images = sorted([
-        p for p in image_folder.iterdir()
-        if p.suffix.lower() in supported
-    ])[:5]
-
     urls = []
     for img in images:
         rel_path = img.relative_to(REPO_ROOT)
@@ -81,14 +91,10 @@ def get_github_raw_urls(image_folder: Path) -> list[str]:
 
 def upload_images(image_folder: Path) -> list[str]:
     """
-    フォルダ内の画像（jpg/png）を最大5枚アップロードして公開URLリストを返す。
-    GitHub Actions上では既存のRAW URLを直接使用する。
+    フォルダ内の画像（jpg/png）を最大5枚ランダムに選びランダムな順でアップロードし、
+    公開URLリストを返す。GitHub Actions上では既存のRAW URLを直接使用する。
     """
-    supported = [".jpg", ".jpeg", ".png"]
-    images = sorted([
-        p for p in image_folder.iterdir()
-        if p.suffix.lower() in supported
-    ])[:5]
+    images = random_image_paths(image_folder, max_count=5)
 
     if not images:
         print(f"  画像が見つかりません: {image_folder}")
@@ -96,7 +102,7 @@ def upload_images(image_folder: Path) -> list[str]:
 
     if IS_GITHUB_ACTIONS:
         print("  [GitHub Actions] リポジトリ内の画像URLを使用します")
-        return get_github_raw_urls(image_folder)
+        return github_raw_urls_for_paths(images)
 
     urls = []
     for img in images:
