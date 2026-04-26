@@ -13,6 +13,12 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 RAKUTEN_AFFILIATE_ID = os.getenv("RAKUTEN_AFFILIATE_ID", "")
 
+# 本投稿の先頭に毎回付ける固定文（テンプレより前）
+MAIN_OPENING_PREFIX = (
+    "こっそり載せておきます。\n\n"
+    "ここは秘密にしておきたかった…..\n\n"
+)
+
 
 def to_affiliate_url(hotel_url: str) -> str:
     """楽天トラベルのURLをアフィリエイトリンクに変換する"""
@@ -232,6 +238,8 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "",
     # 200文字に収まるよう調整（文の途中で切らない）
     if len(main_text) > 210:
         main_text = _trim_at_boundary(main_text, 207)
+
+    main_text = MAIN_OPENING_PREFIX + main_text
 
     review = hotel_info.get("review_average", "")
 
