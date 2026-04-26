@@ -4,13 +4,14 @@ hotels.csv を読んで、未投稿のホテルを1件投稿する。
 全ホテルが投稿済みになったら投稿回数をリセットしてローテーション。
 """
 
+import copy
 import csv
 import sys
 import random
 import argparse
 from pathlib import Path
 
-ROTATION_INTERVAL = 30  # 何投稿後に同じホテルを再投稿するか
+ROTATION_INTERVAL = 20  # 何投稿後に同じホテルを再投稿するか
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -49,16 +50,15 @@ def latest_post_serial(hotels: list[dict]) -> int:
     return m
 
 
-def find_next_hotel(hotels: list[dict]) -> dict | None:
+def revive_hotels_for_rotation(hotels: list[dict]) -> bool:
     """
-    投稿済み = FALSE のホテルを上から順に選ぶ。
-    全て投稿済みの場合、投稿回数が ROTATION_INTERVAL 以上経過したホテルをFALSEに戻してから選ぶ。
+    未投稿（FALSE）が1件もないとき、通算番号が古いホテルを FALSE に戻す。
+    hotels をその場で更新する。いずれかを復活させたら True。
     """
     pending = [h for h in hotels if str(h.get("投稿済み", "FALSE")).upper() == "FALSE"]
     if pending:
-        return random.choice(pending)
+        return False
 
-    # 全て投稿済みの場合 → 投稿回数が最も多いものからリセット
     latest_serial = latest_post_serial(hotels)
     revived = False
     for hotel in hotels:
@@ -72,8 +72,19 @@ def find_next_hotel(hotels: list[dict]) -> dict | None:
         if posted_at > 0 and (latest_serial - posted_at) >= ROTATION_INTERVAL:
             hotel["投稿済み"] = "FALSE"
             revived = True
+    return revived
 
-    if revived:
+
+def find_next_hotel(hotels: list[dict]) -> dict | None:
+    """
+    投稿済み = FALSE のホテルを上から順に選ぶ。
+    全て投稿済みの場合、投稿回数が ROTATION_INTERVAL 以上経過したホテルをFALSEに戻してから選ぶ。
+    """
+    pending = [h for h in hotels if str(h.get("投稿済み", "FALSE")).upper() == "FALSE"]
+    if pending:
+        return random.choice(pending)
+
+    if revive_hotels_for_rotation(hotels):
         pending = [h for h in hotels if str(h.get("投稿済み", "FALSE")).upper() == "FALSE"]
         if pending:
             print(f"（{ROTATION_INTERVAL}投稿経過したホテルを復活させました）")
@@ -100,7 +111,7 @@ def build_posting_candidates(hotels: list[dict]) -> tuple[list[dict], list[dict]
 
 
 def run_check() -> int:
-    """投稿可否の診断（投稿はしない）"""
+    """投稿可否の診断（投稿はしない）。main() と同様にローテーション復活後の可否も見る。"""
     hotels = load_hotels()
     pending, with_img, missing = build_posting_candidates(hotels)
     print("=== 投稿診断（hotels.csv × images/）===\n")
@@ -120,10 +131,26 @@ def run_check() -> int:
     if pending and missing:
         print("→ 未投稿（FALSE）はありますが、どれも画像フォルダが空か未作成です。")
         print("  ローカルで画像を入れたら git add / commit / push し、GitHub 上にも images/ を載せてください。")
-    elif not pending:
-        print("→ 未投稿の FALSE がありません。ローテーション条件を確認してください。")
-    print("→ この状態で --auto を実行しても投稿されません。")
-    return 1
+        print("→ この状態で --auto を実行しても投稿されません。")
+        return 1
+    if not pending:
+        preview = copy.deepcopy(hotels)
+        if revive_hotels_for_rotation(preview):
+            p2, w2, m2 = build_posting_candidates(preview)
+            if w2:
+                print(
+                    f"→ CSV 上は FALSE がありませんが、{ROTATION_INTERVAL} 投稿以上経過した行は "
+                    f"--auto 実行時に FALSE に戻ります。"
+                )
+                print(f"→ 復活後に投稿できる件数: {len(w2)}（FALSE かつ images/ に jpg/png あり）")
+                return 0
+            if p2 and m2:
+                print("→ ローテーションで FALSE に戻る行はありますが、画像フォルダが無い行のみです。")
+                print("→ この状態で --auto を実行しても投稿されません。")
+                return 1
+        print("→ 未投稿の FALSE がありません。いまの通算番号ではローテーション条件（満了）を満たす行もありません。")
+        print("→ この状態で --auto を実行しても投稿されません。")
+        return 1
 
 
 def main(auto_mode: bool = False):
@@ -238,7 +265,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--check",
         action="store_true",
-        help="投稿せず、CSVとimages/の突き合わせだけ表示（終了コード1＝いまは投稿不可）",
+        help="投稿せず、CSVとimages/の突き合わせだけ表示（終了コード1＝FALSEかつ画像ありが無く、ローテーション後も同様）",
     )
     args = parser.parse_args()
     if args.check:
