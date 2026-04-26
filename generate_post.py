@@ -16,7 +16,7 @@ RAKUTEN_AFFILIATE_ID = os.getenv("RAKUTEN_AFFILIATE_ID", "")
 # 本投稿の先頭に毎回付ける固定文（テンプレより前）
 MAIN_OPENING_PREFIX = (
     "こっそり載せておきます。\n\n"
-    "ここは秘密にしておきたかった…..\n\n"
+    "ここは秘密にしておきたかった.....\n\n"
 )
 
 
