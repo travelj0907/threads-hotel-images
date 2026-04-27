@@ -13,12 +13,6 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 RAKUTEN_AFFILIATE_ID = os.getenv("RAKUTEN_AFFILIATE_ID", "")
 
-# 本投稿の先頭に毎回付ける固定文（テンプレより前）
-MAIN_OPENING_PREFIX = (
-    "こっそり載せておきます。\n\n"
-    "ここは秘密にしておきたかった.....\n\n"
-)
-
 
 def to_affiliate_url(hotel_url: str) -> str:
     """楽天トラベルのURLをアフィリエイトリンクに変換する"""
@@ -28,57 +22,64 @@ def to_affiliate_url(hotel_url: str) -> str:
     return f"https://hb.afl.rakuten.co.jp/hgc/{RAKUTEN_AFFILIATE_ID}/?pc={encoded}"
 
 
+# 本投稿本文（10パターンをランダム）— 冒頭・フック行なし
 MAIN_TEMPLATES = [
-    """{hook}
-
-{feature1}、{feature2}。
+    """{feature1}、{feature2}。
 {feature3}。
 
 {access_line}マジでここ知らないと損。
 
 宿の名前は、""",
-
-    """{hook}
-
-{feature1}。
+    """{feature1}。
 {feature2}、{feature3}まで揃ってる。
 
 {access_line}この宿の名前は、""",
-
-    """ちょっと待って。{area}にこんな宿あったの。
-
-{feature1}。
+    """{feature1}。
 {feature2}、{feature3}。
 
 {access_line}友達に教えたくない宿No.1。
 
 宿の名前は、""",
-
-    """{hook}
-
-{area}行くならここ一択だと思ってる。
-
-{feature1}に{feature2}、
+    """{feature1}に{feature2}、
 {feature3}まである。
 
 {access_line}泊まったら分かる。
 
 この宿の名前は、""",
-
-    """正直これ広めたくなかったんだけど。
-
-{feature1}、{feature2}。
+    """{feature1}、{feature2}。
 {feature3}まで体験できる。
 
 {access_line}宿の名前は、""",
-]
+    """ここ、{feature1}。
+{feature2}と{feature3}、両方いける。
 
-HOOK_TEMPLATES = [
-    "{area}、こんな宿があるって知ってた？",
-    "{area}に来るたびにここ選んでる理由を話す",
-    "この宿に泊まってから{area}の旅の基準が変わった",
-    "{area}で泊まって正直いちばん良かった宿の話",
-    "友達に{area}の宿聞かれたらここしか言えない",
+{access_line}コスパも納得。
+
+この宿の名前は、""",
+    """{feature1}が刺さる人向け。
+{feature2}、{feature3}も捨てがたい。
+
+{access_line}とにかく満足度高い。
+
+宿の名前は、""",
+    """{feature1}。
+{feature2}。
+{feature3}。
+
+{access_line}リピート確定レベル。
+
+宿の名前は、""",
+    """{feature1}・{feature2}・{feature3}。
+
+{access_line}旅の疲れ引いていくやつ。
+
+この宿の名前は、""",
+    """{feature1}、{feature2}、{feature3}。
+全部まとめて楽しめる。
+
+{access_line}写真映えも自然にいける。
+
+宿の名前は、""",
 ]
 
 REPLY_TEMPLATES = [
@@ -187,10 +188,17 @@ FALLBACK_FEATURES = [
 ]
 
 
-def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "", include_affiliate: bool = True) -> dict:
+def generate_post(
+    hotel_info: dict,
+    sell_point: str,
+    area: str,
+    price: str = "",
+    include_affiliate: bool = True,
+) -> dict:
     """
     ホテル情報から投稿本文とツリー返信文を生成する。
     返り値: {"main_text": str, "reply_text": str}
+    本投稿は特徴・アクセス等のみ（先頭例文・フック行は使わない）。
     """
     features = [f.strip() for f in sell_point.split("・") if f.strip()]
 
@@ -200,7 +208,6 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "",
         features.append(fallbacks[fi % len(fallbacks)])
         fi += 1
 
-    hook = random.choice(HOOK_TEMPLATES).format(area=area)
     template = random.choice(MAIN_TEMPLATES)
 
     # アクセス系キーワードがsell_pointに含まれていたらaccess_lineは重複するので省略
@@ -227,8 +234,6 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "",
         access_line = ""
 
     main_text = template.format(
-        hook=hook,
-        area=area,
         feature1=features[0],
         feature2=features[1],
         feature3=features[2],
@@ -238,8 +243,6 @@ def generate_post(hotel_info: dict, sell_point: str, area: str, price: str = "",
     # 200文字に収まるよう調整（文の途中で切らない）
     if len(main_text) > 210:
         main_text = _trim_at_boundary(main_text, 207)
-
-    main_text = MAIN_OPENING_PREFIX + main_text
 
     review = hotel_info.get("review_average", "")
 
